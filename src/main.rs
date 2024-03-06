@@ -10,6 +10,7 @@ const HEIGHT: i32 = 20;
 struct Game {
     snake: Snake,
     food: Option<[i32; 2]>,
+    game_over: bool,
 }
 
 impl Game {
@@ -27,10 +28,29 @@ impl Game {
     }
 
     fn update(&mut self) {
+        if self.game_over {
+            return;
+        }
+
         self.snake.move_forward();
 
+        // Check for collision with the game borders
+        let head = self.snake.head();
+        if head[0] < 0 || head[0] >= WIDTH || head[1] < 0 || head[1] >= HEIGHT {
+            self.game_over = true;
+            return;
+        }
+
+        // Check for collision with itself
+        for segment in &self.snake.body[1..] {
+            if head == *segment {
+                self.game_over = true;
+                return;
+            }
+        }
+
         if let Some(food) = self.food {
-            if self.snake.head() == food {
+            if head == food {
                 self.snake.grow();
                 self.food = None;
             }
@@ -105,6 +125,7 @@ fn main() {
             dir: Direction::Right,
         },
         food: None,
+        game_over: false,
     };
 
     let mut accumulator = 0.0;
@@ -127,10 +148,12 @@ fn main() {
         });
 
         event.update(|args| {
-            accumulator += args.dt;
-            while accumulator >= update_interval {
-                game.update();
-                accumulator -= update_interval;
+            if !game.game_over {
+                accumulator += args.dt;
+                while accumulator >= update_interval {
+                    game.update();
+                    accumulator -= update_interval;
+                }
             }
         });
     }
