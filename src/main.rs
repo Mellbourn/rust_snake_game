@@ -107,6 +107,9 @@ fn main() {
         food: None,
     };
 
+    let mut accumulator = 0.0;
+    let update_interval = 0.1; // Update the game state every 0.1 seconds
+
     while let Some(event) = window.next() {
         if let Some(Button::Keyboard(key)) = event.press_args() {
             game.snake.dir = match key {
@@ -123,8 +126,12 @@ fn main() {
             game.render(&c, g);
         });
 
-        event.update(|_| {
-            game.update();
+        event.update(|args| {
+            accumulator += args.dt;
+            while accumulator >= update_interval {
+                game.update();
+                accumulator -= update_interval;
+            }
         });
     }
 }
